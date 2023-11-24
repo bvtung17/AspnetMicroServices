@@ -1,0 +1,45 @@
+version: '3.7'
+
+services:
+  catalogdb:
+    image: mongo
+    container_name: catalogdb
+    ports:
+      - "27017:27017"
+    networks: 
+      - asp-microservice
+    volumes:
+      - mongo_data:/data/db
+
+  basketdb:
+    image: redis:alpine
+    container_name: basketdb
+    ports:
+      - "6379:6379"
+    networks: 
+      - asp-microservice
+
+  discountdb:
+    image: postgres
+    container_name: discountdb
+    environment:
+      - POSTGRES_USER=admin
+      - POSTGRES_PASSWORD=admin1234
+      - POSTGRES_DB=DiscountDb
+    restart: always
+    ports:
+        - "5432:5432"
+    networks: 
+      - asp-microservice
+    volumes:
+      - postgres_data:/var/lib/postgresql/data/
+
+
+networks: 
+  asp-microservice:
+    driver: bridge  
+
+volumes:
+  mongo_data:
+  postgres_data:
+      driver: local
