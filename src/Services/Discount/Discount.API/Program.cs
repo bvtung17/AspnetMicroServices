@@ -1,6 +1,8 @@
 using Discount.API.Extensions;
 using Discount.API.Repositories;
 using Discount.Grpc.Services;
+using Microsoft.AspNetCore.Server.Kestrel.Core;
+using System.Net;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -14,6 +16,18 @@ builder.Services.AddScoped<IDiscountRepository, DiscountRepository>();
 builder.Services.AddGrpc();
 builder.Services.AddAutoMapper(typeof(Program));
 
+builder.WebHost.ConfigureKestrel(options =>
+{
+    options.Listen(IPAddress.Any, 5002, listenOptions =>
+    {
+        listenOptions.Protocols = HttpProtocols.Http1AndHttp2;
+    });
+    options.Listen(IPAddress.Any, 4002, listenOptions =>
+    {
+        listenOptions.Protocols = HttpProtocols.Http2;
+    });
+});
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
@@ -23,8 +37,9 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
+
 app.MigrateDatabase<Program>();
-app.MapGrpcService<DiscountService>().EnableGrpcWeb();
+app.MapGrpcService<DiscountService>();
 app.UseAuthorization();
 
 app.MapControllers();
