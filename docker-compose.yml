@@ -26,7 +26,6 @@ services:
       - POSTGRES_USER=admin
       - POSTGRES_PASSWORD=admin1234
       - POSTGRES_DB=DiscountDb
-    restart: always
     ports:
         - "5432:5432"
     networks: 
@@ -34,6 +33,26 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data/
 
+  rabbitmq:
+    image: rabbitmq:3-management-alpine
+    container_name: rabbitmq
+    ports:
+        - "5672:5672"
+        - "15672:15672"
+    networks: 
+      - asp-microservice
+  
+  portainer:
+    image: portainer/portainer-ce 
+    container_name: portainer
+    ports:
+      - "8080:8000"
+      - "9000:9000"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - portainer_data:/data
+    networks: 
+      - asp-microservice
 
 networks: 
   asp-microservice:
@@ -42,4 +61,5 @@ networks:
 volumes:
   mongo_data:
   postgres_data:
+  portainer_data:
       driver: local

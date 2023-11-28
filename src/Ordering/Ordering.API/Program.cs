@@ -1,7 +1,8 @@
-using Basket.API.GrpcServices;
-using Basket.API.Repositories;
-using Discount.Grpc.Protos;
+using EventBus.Messages.Common;
 using MassTransit;
+using Ordering.API.EventBusConsumer;
+using Ordering.Application;
+using Ordering.Infrastructure;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -11,29 +12,26 @@ builder.Services.AddControllers();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
-builder.Services.AddStackExchangeRedisCache(option =>
-{
-    option.Configuration = builder.Configuration.GetValue<string>("CacheSettings:ConnectionString");
-});
 
-builder.Services.AddScoped<IBasketRepository, BasketRepository>();
+builder.Services.AddInfrastructureServices(builder.Configuration);
+builder.Services.AddApplicationServices();
 
-// Grpc Configuration
-builder.Services.AddGrpcClient<DiscountProtoService.DiscountProtoServiceClient>
-    (o => o.Address = new Uri(builder.Configuration["GrpcSettings:DiscountUrl"]));
-
-// MassTransit-RabbitMQ Configuration
+// MassTransit - RabbitMQ Configuration
 builder.Services.AddMassTransit(config =>
 {
+
+    config.AddConsumer<BasketCheckoutConsumer>();
+
     config.UsingRabbitMq((ctx, cfg) =>
     {
         cfg.Host(builder.Configuration["EventBusSettings:HostAddress"]);
+
+        cfg.ReceiveEndpoint(EventBusConstants.BasketCheckoutQueue, c =>
+        {
+            c.ConfigureConsumer<BasketCheckoutConsumer>(ctx);
+        });
     });
 });
-
-builder.Services.AddScoped<DiscountGrpcService>();
-
-builder.Services.AddAutoMapper(typeof(Program));
 
 var app = builder.Build();
 
@@ -44,6 +42,8 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
+app.UseHttpsRedirection();
+app.UseMigrationDatabase();
 app.UseAuthorization();
 
 app.MapControllers();
