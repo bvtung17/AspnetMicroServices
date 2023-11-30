@@ -54,6 +54,68 @@ services:
     networks: 
       - asp-microservice
 
+  catalog.api:
+    image: asp_microservices_catalog_api:0.1
+    build:
+      context: .
+      dockerfile: src/Services/Catalog/Catalog.API/Dockerfile
+    container_name: catalog.api
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - "DatabaseSettings:ConnectionString=mongodb://catalogdb:27017"
+    depends_on:
+      - catalogdb
+    ports:
+      - "5000:5000"
+    networks: 
+      - asp-microservice
+
+  basket.api:
+    image: asp_microservices_basket_api:0.1
+    container_name: basket.api
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - "CacheSettings:ConnectionString=basketdb:6379"
+      - "GrpcSettings:DiscountUrl=http://discount.api:4002"
+      - "EventBusSettings:HostAddress=amqp://guest:guest@rabbitmq:5672"
+    depends_on:
+      - basketdb
+      - rabbitmq
+    ports:
+      - "5001:5001"
+    networks: 
+      - asp-microservice
+
+  discount.api:
+    image: asp_microservices_discount_api:0.1
+    container_name: discount.api
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - "DatabaseSettings:ConnectionString=Server=discountdb;Port=5432;Database=DiscountDb;User Id=admin;Password=admin1234;"
+    depends_on:
+      - discountdb
+    ports:
+      - "5002:5002"
+      - "4002:4002"
+    networks: 
+      - asp-microservice
+
+
+  ordering.api:
+    image: asp_microservices_ordering_api:0.1
+    container_name: ordering.api
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - "ConnectionStrings:OrderingConnectionString=Server=discountdb;Port=5432;Database=DiscountDb;User Id=admin;Password=admin1234;"  
+      - "EventBusSettings:HostAddress=amqp://guest:guest@rabbitmq:5672"
+    depends_on:
+        - discountdb
+        - rabbitmq
+    ports:
+        - "5004:5004"
+    networks: 
+      - asp-microservice
+
 networks: 
   asp-microservice:
     driver: bridge  

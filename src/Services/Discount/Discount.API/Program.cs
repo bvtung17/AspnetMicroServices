@@ -20,7 +20,7 @@ builder.WebHost.ConfigureKestrel(options =>
 {
     options.Listen(IPAddress.Any, 5002, listenOptions =>
     {
-        listenOptions.Protocols = HttpProtocols.Http1AndHttp2;
+        listenOptions.Protocols = HttpProtocols.Http1;
     });
     options.Listen(IPAddress.Any, 4002, listenOptions =>
     {
